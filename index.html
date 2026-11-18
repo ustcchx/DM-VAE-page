@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dual-Manifold Variational Autoencoders (DM-VAE)</title>
+  <meta name="description" content="Dual-Manifold Variational Autoencoders: Foundation-model-free topological regularization for high-dimensional latent diffusion and flow matching.">
+
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+
+  <!-- KaTeX for crisp LaTeX equations -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+
+  <style>
+    :root {
+      --bg: #ffffff;
+      --bg-alt: #f8f9fc;
+      --text: #1e293b;
+      --muted: #64748b;
+      --accent: #5b3cc4;
+      --accent-dark: #432899;
+      --accent-soft: #f3f0ff;
+      --border: #e2e8f0;
+      --max-w: 1020px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.68;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    header.hero {
+      padding: 64px 0 40px;
+      text-align: center;
+      background: radial-gradient(ellipse at top, #f4f0ff 0%, #ffffff 72%);
+      border-bottom: 1px solid var(--border);
+    }
+    h1.paper-title {
+      font-family: 'Source Serif 4', Georgia, serif;
+      font-size: clamp(2.05rem, 4.2vw, 2.95rem);
+      font-weight: 700;
+      line-height: 1.18;
+      color: #0f172a;
+      margin: 0 auto 16px;
+      max-width: 880px;
+      letter-spacing: -0.015em;
+    }
+    .subtitle-tagline {
+      font-size: 1.08rem;
+      color: #475569;
+      max-width: 780px;
+      margin: 0 auto 24px;
+    }
+    .authors {
+      font-size: 1.08rem;
+      margin-bottom: 8px;
+    }
+    .authors a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .authors a:hover { text-decoration: underline; }
+    .authors span.author {
+      display: inline-block;
+      margin: 2px 8px;
+    }
+    .affiliations {
+      font-size: 1rem;
+      color: #334155;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    .notes {
+      font-size: 0.86rem;
+      color: var(--muted);
+      margin-bottom: 26px;
+    }
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 34px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border-radius: 999px;
+      background: #1e293b;
+      color: #ffffff;
+      font-size: 0.94rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.1);
+    }
+    .btn:hover {
+      background: var(--accent);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(91, 60, 196, 0.22);
+    }
+    .highlights-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+      gap: 14px;
+      margin-top: 8px;
+      text-align: left;
+    }
+    .stat-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+    }
+    .stat-value {
+      font-size: 1.52rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1.2;
+    }
+    .stat-label {
+      font-size: 0.84rem;
+      color: var(--muted);
+      margin-top: 5px;
+      line-height: 1.45;
+    }
+    section {
+      padding: 48px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    section.alt { background: var(--bg-alt); }
+    h2.sec-title {
+      font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 1.82rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0 0 20px;
+      text-align: center;
+    }
+    h3.sub-title {
+      font-size: 1.16rem;
+      font-weight: 600;
+      color: #0f172a;
+      margin: 28px 0 12px;
+    }
+    p.abstract-text {
+      max-width: 850px;
+      margin: 0 auto 28px;
+      text-align: justify;
+      font-size: 1.02rem;
+      color: #334155;
+    }
+    figure.paper-fig {
+      margin: 24px 0;
+      text-align: center;
+    }
+    figure.paper-fig img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      padding: 8px;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+      cursor: zoom-in;
+      transition: transform 0.15s ease;
+    }
+    figure.paper-fig img:hover {
+      transform: scale(1.005);
+    }
+    figure.paper-fig figcaption {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      text-align: left;
+      max-width: 920px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.55;
+    }
+    .two-col {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 24px;
+      align-items: start;
+      margin-top: 20px;
+    }
+    .method-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px 24px;
+      height: 100%;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.02);
+    }
+    .method-card p {
+      font-size: 0.96rem;
+      color: #334155;
+      margin: 10px 0 0;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      margin: 16px 0;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.02);
+    }
+    table.academic-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.89rem;
+      text-align: center;
+    }
+    table.academic-table th, table.academic-table td {
+      padding: 9px 11px;
+      border-bottom: 1px solid #edf2f7;
+      white-space: nowrap;
+    }
+    table.academic-table th {
+      background: #f8fafc;
+      font-weight: 600;
+      color: #1e293b;
+      border-bottom: 2px solid #cbd5e1;
+    }
+    table.academic-table td:first-child, table.academic-table th:first-child {
+      text-align: left;
+      padding-left: 16px;
+    }
+    table.academic-table tr.group-row td {
+      background: #f1f5f9;
+      font-weight: 600;
+      color: #334155;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      text-align: left;
+      padding-left: 16px;
+    }
+    table.academic-table tr.ours-row {
+      background: var(--accent-soft);
+    }
+    /* Gallery Tabs */
+    .gallery-tabs {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 18px 0 10px;
+    }
+    .tab-btn {
+      padding: 8px 18px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: #334155;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .tab-btn.active, .tab-btn:hover {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* BibTeX */
+    .bibtex-box {
+      position: relative;
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 12px;
+      padding: 20px 22px;
+      overflow-x: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.86rem;
+      line-height: 1.58;
+    }
+    .copy-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .copy-btn:hover { background: rgba(255,255,255,0.22); }
+
+    /* Lightbox modal for zooming figures */
+    .lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.86);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      cursor: zoom-out;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox img {
+      max-width: 95vw;
+      max-height: 92vh;
+      border-radius: 8px;
+      background: #ffffff;
+      padding: 8px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+    }
+
+    footer {
+      padding: 32px 0;
+      text-align: center;
+      font-size: 0.86rem;
+      color: var(--muted);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="container">
+    <h1 class="paper-title">Dual-Manifold Variational Autoencoders</h1>
+    <p class="subtitle-tagline">
+      Internalizing Topological Regularization via Smooth Low-Dimensional Skeletons for High-Dimensional Latent Diffusion &amp; Flow Matching
+    </p>
+
+    <div class="authors">
+      <span class="author"><a href="https://ustcchx.github.io/" target="_blank">Hongxu Chen</a><sup>*</sup></span>
+      <span class="author">Chun Wang<sup>*</sup></span>
+      <span class="author">Yanghao Wang</span>
+      <span class="author">Hongxiang Li</span>
+      <span class="author">Zhen Wang</span>
+      <span class="author">Zhixiang Zhang</span>
+      <span class="author"><a href="https://zjuchenlong.github.io/" target="_blank">Long Chen</a><sup>&dagger;</sup></span>
+    </div>
+
+    <div class="affiliations">The Hong Kong University of Science and Technology (HKUST)</div>
+    <div class="notes"><sup>*</sup>Equal contribution &nbsp;&middot;&nbsp; <sup>&dagger;</sup>Corresponding author</div>
+
+    <!-- Update href links below once arXiv / code / checkpoints are released -->
+    <div class="btn-group">
+      <a class="btn" href="#abstract"><i class="fas fa-file-pdf"></i> Paper (Coming Soon)</a>
+      <a class="btn" href="#bibtex"><i class="ai ai-arxiv"></i> arXiv (Coming Soon)</a>
+      <a class="btn" href="https://github.com/ustcchx/DM-VAE" target="_blank"><i class="fab fa-github"></i> Code</a>
+      <a class="btn" href="https://huggingface.co/Daxuxu36" target="_blank"><i class="fas fa-cube"></i> Checkpoints</a>
+    </div>
+
+    <div class="highlights-grid">
+      <div class="stat-card">
+        <div class="stat-value">0.12 rFID</div>
+        <div class="stat-label">ImageNet-1K 256&times;256 reconstruction (f16d64, 30.76 dB PSNR) without external foundation models</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">1.20 / 1.17 gFID</div>
+        <div class="stat-label">Foundation-model-free FID<sub>50K</sub> w/ CFG (f16d64 / f16d32), 1.28 / 1.25 w/o CFG</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">1.11 gFID</div>
+        <div class="stat-label">State-of-the-art FID<sub>50K</sub> on ImageNet 256&times;256 when orthogonally combined with DINOv2</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">1.12 OOD rFID</div>
+        <div class="stat-label">Zero-shot Anime-Faces-256 (32.87 dB PSNR), outperforming RAE (9.85) &amp; VA-VAE (2.05)</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="abstract">
+  <div class="container">
+    <h2 class="sec-title">Abstract</h2>
+    <p class="abstract-text">
+      In latent diffusion models, expanding the latent dimension of variational autoencoders (VAEs) is essential to push the upper bound of reconstruction quality. However, without explicit structural constraints, such unregularized expansion easily yields a rugged and ill-conditioned latent manifold, causing generated latents to drift off the manifold during generation (i.e., off-manifold problem). Recent works smooth this manifold by using external foundation models (e.g., DINOv2) as a topological regularizer. However, we argue that tying the latent space to frozen external priors inherently restricts generalization: bound by their pre-training distributions and semantic biases, they may fail to capture faithful visual details on out-of-distribution domains. Observing that low-dimensional latents naturally form a smoother, generation-friendly manifold, we propose <strong>dual-manifold VAE (DM-VAE)</strong> to leverage internal representations as a topological regularizer. Specifically, DM-VAE pairs a high-dimensional reconstructive branch with a low-dimensional branch that extracts a clean topological skeleton, anchoring the high-dimensional manifold to this smooth subspace. Building upon this framework, we further introduce <strong>topological representation alignment (TRA)</strong> to supervise intermediate generator features during training, and <strong>internal guidance with topological skeleton ($\text{IG}_{\text{TS}}$)</strong> to guide structural components while preserving high-frequency details at inference. On ImageNet-1K ($256\times256$), our foundation-model-free DM-VAE achieves a state-of-the-art rFID of 0.12 and a generation $\text{FID}_{50\text{K}}$ of 1.28 (w/o CFG) and 1.20 (w/ CFG), and further reaches 1.11 when orthogonally combined with DINOv2.
+    </p>
+
+    <figure class="paper-fig">
+      <img src="static/images/fig2_framework.png" alt="Comparison of reconstruction paradigms and DM-VAE framework">
+      <figcaption>
+        <strong>Comparison of reconstruction paradigms in LDMs.</strong> Unlike (a) vanilla VAEs that suffer from unconstrained, rugged high-dimensional manifolds, or (b) foundation-model-aligned and (c) foundation-model-based VAEs tied to frozen external priors (e.g., DINOv2) with limited out-of-distribution generalization, (d) our foundation-model-free <strong>DM-VAE</strong> constructs an internal topological regularizer. Compressing $z$ via $\mathcal{P}_{\text{down}}$ into a smooth low-dimensional branch ($z_{\text{low}}, \mathcal{D}_{\text{low}}$) and aligning $z$ with lifted $\hat{z} = \mathcal{P}_{\text{up}}(z_{\text{low}})$ compels the high-dimensional manifold to inherit a smooth, generation-friendly geometry (e).
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="alt" id="method">
+  <div class="container">
+    <h2 class="sec-title">Methodology &amp; Latent Geometry Analysis</h2>
+
+    <div class="two-col">
+      <div class="method-card">
+        <h3 class="sub-title" style="margin-top:0;">1. Dual-Manifold Alignment &amp; Tubular Geometry</h3>
+        <p>
+          Expanding channel capacity $C$ exponentially lowers the reconstruction distortion bound $\epsilon_{\text{recon}} \ge \alpha \exp(-\gamma \cdot C)$, yet embedding an intrinsically $d$-dimensional image manifold into $\mathbb{R}^{C\times H\times W}$ introduces exploding codimension $c = CHW - d$, scattering high-frequency energy across normal directions.
+        </p>
+        <p>
+          DM-VAE decomposes $z = z^{\text{base}} + z^{\text{detail}}$ via orthogonal $1\times 1$ projections ($\mathcal{P}_{\text{down}}, \mathcal{P}_{\text{up}}$), supervising $z_{\text{low}}$ solely with $\mathcal{L}_{\text{rec}}$ (without GAN loss) while minimizing $\mathcal{L}_{\text{DM}} = \mathbb{E}_x[\|z - \hat{z}\|_2^2]$. This concentrates $\mathcal{M}_Z$ within a narrow tubular neighborhood around smooth $\mathcal{M}_{\text{base}}$ ($|\cos(z^{\text{base}}, z^{\text{detail}})| = 0.0047$) and decouples temporal SNR transition windows ($t_{\text{base}}^* = 0.43$ vs. $t_{\text{detail}}^* = 0.91$).
+        </p>
+      </div>
+
+      <div class="method-card">
+        <h3 class="sub-title" style="margin-top:0;">2. TRA &amp; Single-Pass Skeleton Guidance ($\text{IG}_{\text{TS}}$)</h3>
+        <p>
+          <strong>Training (TRA):</strong> Intermediate DiT hidden features $h_t$ are mapped via $\mathcal{P}_{\text{align}}$ to $\tilde{z}_{\text{low}}$ and aligned with the clean skeleton $z_{\text{low}} = \mathcal{P}_{\text{down}}(z_1)$ via cosine similarity $\mathcal{L}_{\text{TRA}}$, establishing early structural velocity priors free from high-frequency gradient variance.
+        </p>
+        <p>
+          <strong>Inference ($\text{IG}_{\text{TS}}$):</strong> Within a <em>single forward pass</em> (zero doubled-NFE overhead), $\text{IG}_{\text{TS}}$ separates $\hat{z}_1 = \hat{z}_1^{\text{base}} + \hat{z}_1^{\text{detail}}$, guides only the skeleton with norm-calibrated $\tilde{z}_1^{\text{base}}$, and adds unperturbed $\hat{z}_1^{\text{detail}}$ back:
+          $$\hat{z}_1^{\text{guided}} = \hat{z}_1^{\text{base}} + (\omega - 1)(\hat{z}_1^{\text{base}} - \tilde{z}_1^{\text{base}}) + \hat{z}_1^{\text{detail}}$$
+        </p>
+      </div>
+    </div>
+
+    <div class="two-col" style="margin-top:24px; align-items:center;">
+      <figure class="paper-fig" style="margin:0;">
+        <img src="static/images/fig4_tra_igts.png" alt="Overview of TRA and IG_TS">
+        <figcaption><strong>Overview of TRA and $\text{IG}_{\text{TS}}$.</strong> Aligning intermediate features to $z_{\text{low}}$ enables single-pass skeleton guidance while preserving high-frequency details $\hat{z}_1^{\text{detail}}$.</figcaption>
+      </figure>
+
+      <figure class="paper-fig" style="margin:0;">
+        <img src="static/images/alg1_igts.png" alt="Algorithm 1: Internal Guidance with Topological Skeleton">
+        <figcaption><strong>Algorithm 1 ($\text{IG}_{\text{TS}}$).</strong> Single-pass velocity and skeleton prediction, norm calibration, and detail-preserving latent update.</figcaption>
+      </figure>
+    </div>
+
+    <figure class="paper-fig" style="margin-top:28px;">
+      <img src="static/images/fig6_spectral_snr.png" alt="Spectral Decomposition and Empirical Temporal SNR Decoupling">
+      <figcaption>
+        <strong>Empirical verification of spectral decomposition and temporal SNR decoupling</strong> on 5K ImageNet validation images (f16d64, $C_{\text{low}}=32$). (a) 2D Fourier PSD confirms skeleton $\mathcal{D}(\hat{z})$ preserves global low-frequency structures ($k \le 8$), while detail residual $\mathcal{D}(z) - \mathcal{D}(\hat{z})$ rises by over 44 dB toward high frequencies. (b) While SD-VAE suffers heavy base-detail overlap ($t_{\text{detail}}^* = 0.68$), DM-VAE pushes the detail transition peak to $t_{\text{detail}}^* = 0.91$, isolating structural velocity learning within $[0, 0.6]$.
+      </figcaption>
+    </figure>
+
+    <div class="two-col" style="margin-top:24px; align-items:center;">
+      <figure class="paper-fig" style="margin:0;">
+        <img src="static/images/fig3_tradeoff.png" alt="rFID vs gFID scaling comparison">
+        <figcaption><strong>Overcoming the reconstruction-generation trade-off.</strong> On DiT-XL (80 epochs), scaling from d32 to d64 severely degrades SD-VAE ($10.59 \to 17.24$), whereas DM-VAE + $\text{IG}_{\text{TS}}$ reaches <strong>0.12 rFID</strong> and <strong>5.44 gFID<sub>10K</sub></strong> without foundation models.</figcaption>
+      </figure>
+
+      <figure class="paper-fig" style="margin:0;">
+        <img src="static/images/fig7_decomposition.jpg" alt="Latent Subspace Decomposition Visualization">
+        <figcaption><strong>Latent subspace decomposition (f16d64, $C_{\text{low}}=32$).</strong> Top to bottom: input $x$, full reconstruction $\mathcal{D}(z)$, decoded skeleton $\mathcal{D}(\hat{z})$, and residual $|\mathcal{D}(z) - \mathcal{D}(\hat{z})|$ isolating fine edges and textures.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section id="results">
+  <div class="container">
+    <h2 class="sec-title">Experimental Results</h2>
+
+    <h3 class="sub-title">1. In-Domain &amp; Zero-Shot Out-of-Distribution (OOD) Reconstruction</h3>
+    <div class="two-col" style="align-items:center;">
+      <div class="table-wrap" style="margin:0;">
+        <table class="academic-table">
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>In-Domain rFID&darr;</th>
+              <th>PSNR&uarr;</th>
+              <th>OOD rFID&darr;</th>
+              <th>OOD PSNR&uarr;</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>RAE</td><td>0.57</td><td>19.20</td><td>9.85</td><td>17.53</td></tr>
+            <tr><td>RAEv2</td><td>0.31</td><td>23.29</td><td>5.09</td><td>22.20</td></tr>
+            <tr><td>MAE-VAE (f16d32)</td><td>0.28</td><td>28.33</td><td>2.38</td><td>29.78</td></tr>
+            <tr><td>VA-VAE (f16d32)</td><td>0.28</td><td>27.96</td><td>2.05</td><td>29.33</td></tr>
+            <tr><td>SD-VAE (f16d32)</td><td>0.26</td><td>28.59</td><td>2.08</td><td>30.19</td></tr>
+            <tr class="ours-row"><td><strong>DM-VAE (f16d32, Ours)</strong></td><td>0.21</td><td>28.50</td><td>1.93</td><td>30.30</td></tr>
+            <tr class="ours-row"><td><strong>DM-VAE (f16d64, Ours)</strong></td><td><strong>0.12</strong></td><td><strong>30.76</strong></td><td><strong>1.12</strong></td><td><strong>32.87</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <figure class="paper-fig" style="margin:0;">
+        <img src="static/images/fig1_ood.png" alt="Qualitative comparison of OOD image reconstruction">
+        <figcaption><strong>Zero-shot OOD reconstruction</strong> (trained solely on ImageNet-1K): frozen external priors in RAE degrade severely on OOD domains (16.32 dB PSNR), whereas DM-VAE preserves crisp details (27.19 dB low branch, <strong>30.10 dB</strong> high branch).</figcaption>
+      </figure>
+    </div>
+
+    <h3 class="sub-title" style="margin-top:40px;">2. Class-Conditional Generation on ImageNet-1K ($256\times256$)</h3>
+    <div class="table-wrap">
+      <table class="academic-table">
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Epochs</th>
+            <th>#Params</th>
+            <th>FID<sub>50K</sub>&darr; (w/o CFG)</th>
+            <th>sFID&darr; (w/o CFG)</th>
+            <th>IS&uarr; (w/o CFG)</th>
+            <th>FID<sub>50K</sub>&darr; (w/ CFG)</th>
+            <th>sFID&darr; (w/ CFG)</th>
+            <th>IS&uarr; (w/ CFG)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="group-row"><td colspan="9">Foundation-Model-Free Latent Diffusion (No External Self-Supervised Priors)</td></tr>
+          <tr><td>DiT-XL/2</td><td>1400</td><td>675M</td><td>9.62</td><td>6.85</td><td>121.5</td><td>2.27</td><td>4.60</td><td>278.2</td></tr>
+          <tr><td>MaskDiT</td><td>1600</td><td>675M</td><td>5.69</td><td>10.34</td><td>177.9</td><td>2.28</td><td>5.67</td><td>276.6</td></tr>
+          <tr><td>SiT-XL/2</td><td>1400</td><td>675M</td><td>8.61</td><td>6.32</td><td>131.7</td><td>2.06</td><td>4.50</td><td>270.3</td></tr>
+          <tr><td>TREAD</td><td>740</td><td>675M</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>1.69</td><td>4.73</td><td>292.7</td></tr>
+          <tr><td>MDTv2-XL/2</td><td>1080</td><td>675M</td><td>&ndash;</td><td>&ndash;</td><td>&ndash;</td><td>1.58</td><td>4.52</td><td>314.7</td></tr>
+          <tr class="ours-row"><td><strong>DiT-XL (DM-VAE, f16d32)</strong></td><td>64</td><td>675M</td><td>2.62</td><td>4.62</td><td>190.1</td><td>1.67</td><td>4.12</td><td>253.4</td></tr>
+          <tr class="ours-row"><td><strong>DiT-XL (DM-VAE, f16d32)</strong></td><td>400</td><td>675M</td><td><strong>1.25</strong></td><td><strong>4.16</strong></td><td><strong>250.8</strong></td><td><strong>1.17</strong></td><td><strong>4.02</strong></td><td>283.0</td></tr>
+          <tr class="ours-row"><td><strong>DiT-XL (DM-VAE, f16d64)</strong></td><td>400</td><td>675M</td><td>1.28</td><td><strong>4.16</strong></td><td>245.7</td><td>1.20</td><td>4.10</td><td>274.8</td></tr>
+
+          <tr class="group-row"><td colspan="9">Latent Diffusion with External Self-Supervised Representation Models</td></tr>
+          <tr><td>REPA</td><td>800</td><td>675M</td><td>5.90</td><td>5.69</td><td>157.8</td><td>1.42</td><td>4.70</td><td>305.7</td></tr>
+          <tr><td>REG</td><td>480</td><td>677M</td><td>2.20</td><td>4.67</td><td>219.1</td><td>1.40</td><td>4.24</td><td>296.9</td></tr>
+          <tr><td>VA-VAE (LightningDiT)</td><td>800</td><td>675M</td><td>2.17</td><td>4.36</td><td>205.6</td><td>1.35</td><td>4.15</td><td>295.3</td></tr>
+          <tr><td>RAE (DiT<sup>DH</sup>)</td><td>800</td><td>839M</td><td>1.60</td><td>5.40</td><td>242.7</td><td>1.28</td><td>4.72</td><td>262.9</td></tr>
+          <tr><td>REPA-E</td><td>800</td><td>675M</td><td>1.83</td><td>4.17</td><td>217.3</td><td>1.26</td><td>4.11</td><td>314.9</td></tr>
+          <tr><td>DDT-XL</td><td>400</td><td>675M</td><td>6.27</td><td>&ndash;</td><td>154.7</td><td>1.26</td><td>&ndash;</td><td>310.6</td></tr>
+          <tr><td>IG (VA-VAE)</td><td>680</td><td>675M</td><td>1.34</td><td><strong>3.94</strong></td><td>229.3</td><td>1.19</td><td>4.11</td><td>269.0</td></tr>
+          <tr class="ours-row"><td><strong>DiT-XL (DM-VAE<sub>Dino</sub>, f16d32)</strong></td><td>60</td><td>675M</td><td>2.26</td><td>4.81</td><td>200.3</td><td>1.36</td><td>4.12</td><td>276.3</td></tr>
+          <tr class="ours-row"><td><strong>DiT-XL (DM-VAE<sub>Dino</sub>, f16d32)</strong></td><td>400</td><td>675M</td><td><strong>1.29</strong></td><td>4.28</td><td><strong>253.3</strong></td><td><strong>1.11</strong></td><td><strong>4.03</strong></td><td>297.4</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="sub-title" style="margin-top:38px;">3. Qualitative Generation Gallery (Foundation-Model-Free DM-VAE)</h3>
+    <div class="gallery-tabs">
+      <button class="tab-btn active" onclick="switchTab(event, 'tab-64ep')">Fast Convergence (64 Epochs, w/o CFG)</button>
+      <button class="tab-btn" onclick="switchTab(event, 'tab-400ep-1')">f16d64 @ 400 Epochs (Gallery I)</button>
+      <button class="tab-btn" onclick="switchTab(event, 'tab-400ep-2')">f16d64 @ 400 Epochs (Gallery II)</button>
+    </div>
+
+    <div id="tab-64ep" class="tab-panel active">
+      <figure class="paper-fig">
+        <img src="static/images/fig5_gen64ep.jpg" alt="Qualitative generation on ImageNet at 64 epochs without CFG">
+        <figcaption><strong>Qualitative generation on ImageNet-1K ($256\times256$)</strong> using DiT-XL with our foundation-model-free DM-VAE (f16d32) and single-pass $\text{IG}_{\text{TS}}$ at only <strong>64 training epochs</strong> (without CFG).</figcaption>
+      </figure>
+    </div>
+
+    <div id="tab-400ep-1" class="tab-panel">
+      <figure class="paper-fig">
+        <img src="static/images/fig8_gen400ep_1.jpg" alt="Qualitative generation on ImageNet f16d64 at 400 epochs part 1">
+        <figcaption><strong>Qualitative generation results (Part I)</strong> on ImageNet-1K ($256\times256$) using DiT-XL with our foundation-model-free DM-VAE (f16d64, 0.12 rFID) at 400 epochs (without CFG).</figcaption>
+      </figure>
+    </div>
+
+    <div id="tab-400ep-2" class="tab-panel">
+      <figure class="paper-fig">
+        <img src="static/images/fig9_gen400ep_2.jpg" alt="Qualitative generation on ImageNet f16d64 at 400 epochs part 2">
+        <figcaption><strong>Qualitative generation results (Part II)</strong> on ImageNet-1K ($256\times256$) using DiT-XL with our foundation-model-free DM-VAE (f16d64, 0.12 rFID) at 400 epochs (without CFG).</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="bibtex">
+  <div class="container">
+    <h2 class="sec-title">BibTeX</h2>
+    <div class="bibtex-box">
+      <button class="copy-btn" onclick="copyBibtex(this)"><i class="far fa-copy"></i> Copy</button>
+<pre id="bibtex-code" style="margin:0;">@article{chen2026dmvae,
+  title   = {Dual-Manifold Variational Autoencoders},
+  author  = {Chen, Hongxu and Wang, Chun and Wang, Yanghao and Li, Hongxiang and Wang, Zhen and Zhang, Zhixiang and Chen, Long},
+  journal = {arXiv preprint},
+  year    = {2026}
+}</pre>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    Project page for <strong>Dual-Manifold Variational Autoencoders (DM-VAE)</strong> &middot;
+    <a href="https://ustcchx.github.io/" target="_blank">Hongxu Chen</a> &middot; HKUST CSE
+  </div>
+</footer>
+
+<!-- Click-to-zoom Lightbox -->
+<div class="lightbox" id="lightbox" onclick="this.classList.remove('open')">
+  <img id="lightbox-img" src="" alt="Zoomed figure">
+</div>
+
+<script>
+  function switchTab(evt, panelId) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    evt.currentTarget.classList.add('active');
+    document.getElementById(panelId).classList.add('active');
+  }
+
+  function copyBibtex(btn) {
+    const text = document.getElementById('bibtex-code').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const old = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+      setTimeout(() => { btn.innerHTML = old; }, 1800);
+    });
+  }
+
+  document.querySelectorAll('figure.paper-fig img').forEach(img => {
+    img.addEventListener('click', () => {
+      document.getElementById('lightbox-img').src = img.src;
+      document.getElementById('lightbox').classList.add('open');
+    });
+  });
+</script>
+</body>
+</html>

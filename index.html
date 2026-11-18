@@ -418,7 +418,7 @@
 
     <div class="two-col">
       <div class="method-card">
-        <h3 class="sub-title" style="margin-top:0;">1. Dual-Manifold Alignment &amp; Tubular Geometry</h3>
+        <h3 class="sub-title" style="margin-top:0;">1. Dual-Manifold Alignment</h3>
         <p>
           Expanding channel capacity $C$ exponentially lowers the reconstruction distortion bound $\epsilon_{\text{recon}} \ge \alpha \exp(-\gamma \cdot C)$, yet embedding an intrinsically $d$-dimensional image manifold into $\mathbb{R}^{C\times H\times W}$ introduces exploding codimension $c = CHW - d$, scattering high-frequency energy across normal directions.
         </p>
@@ -428,7 +428,7 @@
       </div>
 
       <div class="method-card">
-        <h3 class="sub-title" style="margin-top:0;">2. TRA &amp; Single-Pass Skeleton Guidance ($\text{IG}_{\text{TS}}$)</h3>
+        <h3 class="sub-title" style="margin-top:0;">2. TRA &amp; Skeleton Guidance ($\text{IG}_{\text{TS}}$)</h3>
         <p>
           <strong>Training (TRA):</strong> Intermediate DiT hidden features $h_t$ are mapped via $\mathcal{P}_{\text{align}}$ to $\tilde{z}_{\text{low}}$ and aligned with the clean skeleton $z_{\text{low}} = \mathcal{P}_{\text{down}}(z_1)$ via cosine similarity $\mathcal{L}_{\text{TRA}}$, establishing early structural velocity priors free from high-frequency gradient variance.
         </p>

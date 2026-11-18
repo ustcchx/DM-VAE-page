@@ -2,7 +2,7 @@
 
 Official project page & repository for **Dual-Manifold Variational Autoencoders**.
 
-- **Project Page:** [https://ustcchx.github.io/DM-VAE/](https://ustcchx.github.io/DM-VAE/)
+- **Project Page:** [https://ustcchx.github.io/DM-VAE-page/](https://ustcchx.github.io/DM-VAE/)
 - **Authors:** Hongxu Chen*, Chun Wang*, Yanghao Wang, Hongxiang Li, Zhen Wang, Zhixiang Zhang, Long Chen† (HKUST)
 
 ## Highlights

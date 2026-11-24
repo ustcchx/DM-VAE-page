@@ -1,13 +1,13 @@
 /* DM-VAE animated method explainer */
-.dmx-section { padding: 34px 0 30px; background: #ffffff; }
+.dmx-section { padding: 0 0 48px; border: none; }
 .dmx { max-width: 1040px; margin: 0 auto; }
 .dmx-stage {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
   overflow: hidden;
   container-type: inline-size;
   cursor: pointer;

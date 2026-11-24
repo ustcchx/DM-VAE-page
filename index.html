@@ -19,6 +19,10 @@
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
     onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
 
+  <!-- Animated method explainer -->
+  <link rel="stylesheet" href="static/explainer/explainer.css">
+  <script defer src="static/explainer/explainer.js"></script>
+
   <style>
     :root {
       --bg: #ffffff;
@@ -549,6 +553,25 @@
     </div>
   </div>
 </header>
+
+<!-- Animated method explainer (static/explainer/) -->
+<section class="dmx-section" id="explainer">
+  <div class="container">
+    <div class="dmx paused" id="dmx" aria-label="Animated explanation of the DM-VAE method">
+      <div class="dmx-stage">
+        <canvas></canvas>
+        <div class="dmx-labels"></div>
+        <div class="dmx-caption"></div>
+        <button class="dmx-bigplay" type="button" aria-label="Play">&#9654;</button>
+      </div>
+      <div class="dmx-bar">
+        <div class="dmx-chapters"></div>
+        <button class="dmx-play" type="button" aria-label="Play">&#9654;</button>
+        <span class="dmx-time"></span>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- Top Visual Showcase: Key Pareto Curve + Zero-Shot OOD Visual + Qualitative Generation Gallery -->
 <section class="showcase-section" id="showcase">
